@@ -1,0 +1,1 @@
+POSAnalyzer 店舗向けイベント公開用
