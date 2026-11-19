@@ -1,0 +1,1283 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>店舗向けイベント情報</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--line:#dbe2ea;--text:#172033;--muted:#667085;--accent:#2563eb;--soft:#eaf1ff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:"Yu Gothic UI","Meiryo",sans-serif}
+header{position:sticky;top:0;z-index:5;background:#fff;border-bottom:1px solid var(--line)}
+.header{max-width:1180px;margin:auto;padding:18px}.header h1{margin:0;font-size:24px}.sub{color:var(--muted);font-size:13px;margin-top:5px}
+main{max-width:1180px;margin:auto;padding:18px}.toolbar{display:grid;grid-template-columns:1fr 220px;gap:10px}
+input,select{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:#fff;font-size:15px}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.filters button{border:1px solid var(--line);background:#fff;padding:9px 14px;border-radius:999px;font-weight:700;cursor:pointer}
+.filters button.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}.box{background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px 16px}
+.label{color:var(--muted);font-size:12px}.value{font-size:22px;font-weight:800}.day{margin:18px 0 24px}.day-title{font-size:18px;font-weight:800;margin-bottom:10px}
+.weekday{color:var(--muted);font-size:14px}.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(315px,1fr));gap:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px}.name{font-size:17px;font-weight:800;margin-bottom:8px}
+.meta{display:grid;grid-template-columns:86px 1fr;gap:5px 8px;font-size:14px}.k{color:var(--muted)}
+.badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.badge{font-size:12px;background:var(--soft);color:#1d4ed8;padding:4px 8px;border-radius:999px}
+.source{margin-top:10px;font-size:12px}.source a{color:var(--accent);text-decoration:none}.empty{padding:44px;text-align:center;background:#fff;border:1px solid var(--line);border-radius:14px;color:var(--muted)}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:22px}
+@media(max-width:720px){.header h1{font-size:20px}.toolbar{grid-template-columns:1fr}.summary{grid-template-columns:1fr}.cards{grid-template-columns:1fr}main{padding:12px}}
+</style>
+</head>
+<body>
+<header><div class="header"><h1>店舗向けイベント情報</h1><div class="sub">POSAnalyzer共有イベント一覧 / 更新 2026/11/19 15:20</div></div></header>
+<main>
+<div class="toolbar">
+<input id="search" type="search" placeholder="イベント名・会場・種別で検索">
+<select id="venue"><option value="">すべての会場</option></select>
+</div>
+<div class="filters" id="filters">
+<button data-range="today" class="active">今日</button>
+<button data-range="tomorrow">明日</button>
+<button data-range="week">今週</button>
+<button data-range="30">30日</button>
+<button data-range="all">すべて</button>
+</div>
+<div class="summary">
+<div class="box"><div class="label">表示イベント</div><div class="value" id="eventCount">0件</div></div>
+<div class="box"><div class="label">想定来場者合計</div><div class="value" id="attendanceTotal">0人</div></div>
+<div class="box"><div class="label">表示期間</div><div class="value" id="rangeLabel" style="font-size:16px">—</div></div>
+</div>
+<div id="content"></div>
+</main>
+<footer>参照専用 / 売上・予測額などの社内情報は表示していません</footer>
+<script>
+const EVENTS=[
+  {
+    "Date": "2026-11-19",
+    "Venue": "\u770C\u6C11\u4F1A\u9928",
+    "Name": "\u677E\u5C71\u5343\u6625",
+    "Type": "\u30B3\u30F3\u30B5\u30FC\u30C8",
+    "Start": "",
+    "End": "",
+    "Attendance": 0,
+    "Scale": "\u4E2D",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u65B0\u6F5F\u5E02\u5927\u898F\u6A21\u30A4\u30D9\u30F3\u30C8",
+    "SourceUrl": "https://www.city.niigata.lg.jp/kanko/kanko/promotion/eventschedule.html",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-11-20",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u4E00\u822C\u5411\u3051 \u7B2C60\u56DE\u65E5\u672C\u4F5C\u696D\u7642\u6CD5\u5B66\u4F1A",
+    "Type": "\u5B66\u4F1A\u30FB\u5C55\u793A\u4F1A\uFF08\u521D\u65E5\u30FB\u5BBF\u6CCA\u9700\u8981\uFF09",
+    "Start": "17:15",
+    "End": "20:00",
+    "Attendance": 3110,
+    "Scale": "\u4E2D",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F\uFF0B\u81EA\u52D5\u53D6\u5F97\uFF1A\u65B0\u6F5F\u5E02\u5927\u898F\u6A21\u30A4\u30D9\u30F3\u30C8",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=11\u0026year=2026",
+    "OutOfPrefecture": 3045,
+    "Overseas": 15,
+    "Note": ""
+  },
+  {
+    "Date": "2026-11-21",
+    "Venue": "\u770C\u6C11\u4F1A\u9928",
+    "Name": "\u677E\u5E73\u5065 \u30DE\u30C4\u30B1\u30F3\u30B5\u30F3\u30D0\u30B3\u30F3\u30B5\u30FC\u30C8",
+    "Type": "\u30B3\u30F3\u30B5\u30FC\u30C8",
+    "Start": "",
+    "End": "",
+    "Attendance": 0,
+    "Scale": "\u4E2D",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u65B0\u6F5F\u5E02\u5927\u898F\u6A21\u30A4\u30D9\u30F3\u30C8",
+    "SourceUrl": "https://www.city.niigata.lg.jp/kanko/kanko/promotion/eventschedule.html",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-11-21",
+    "Venue": "\u30C7\u30F3\u30AB\u30D3\u30C3\u30B0\u30B9\u30EF\u30F3",
+    "Name": "\u30A2\u30EB\u30D3\u30EC\u30C3\u30AF\u30B9\u65B0\u6F5F\u30DB\u30FC\u30E0\u6226 vs ",
+    "Type": "\u30B5\u30C3\u30AB\u30FC",
+    "Start": "14:00",
+    "End": "16:15",
+    "Attendance": 22000,
+    "Scale": "\u5927",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u30A2\u30EB\u30D3\u30EC\u30C3\u30AF\u30B9\u65B0\u6F5F\u516C\u5F0F",
+    "SourceUrl": "https://www.albirex.co.jp/game/",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-11-21",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u4E00\u822C\u5411\u3051 \u7B2C60\u56DE\u65E5\u672C\u4F5C\u696D\u7642\u6CD5\u5B66\u4F1A",
+    "Type": "\u5B66\u4F1A\u30FB\u5C55\u793A\u4F1A\uFF08\u4E2D\u65E5\u30FB\u5BBF\u6CCA\u9700\u8981\uFF09",
+    "Start": "17:15",
+    "End": "20:00",
+    "Attendance": 3110,
+    "Scale": "\u4E2D",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F\uFF0B\u81EA\u52D5\u53D6\u5F97\uFF1A\u65B0\u6F5F\u5E02\u5927\u898F\u6A21\u30A4\u30D9\u30F3\u30C8",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=11\u0026year=2026",
+    "OutOfPrefecture": 3045,
+    "Overseas": 15,
+    "Note": ""
+  },
+  {
+    "Date": "2026-11-22",
+    "Venue": "\u65B0\u6F5F\u30C6\u30EB\u30B5",
+    "Name": "\u3082\u3082\u3044\u308D\u30AF\u30ED\u30FC\u30D0\u30FCZ",
+    "Type": "\u30B3\u30F3\u30B5\u30FC\u30C8",
+    "Start": "",
+    "End": "",
+    "Attendance": 0,
+    "Scale": "\u4E2D",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u65B0\u6F5F\u5E02\u5927\u898F\u6A21\u30A4\u30D9\u30F3\u30C8",
+    "SourceUrl": "https://www.city.niigata.lg.jp/kanko/kanko/promotion/eventschedule.html",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-11-22",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u4E00\u822C\u5411\u3051 \u7B2C60\u56DE\u65E5\u672C\u4F5C\u696D\u7642\u6CD5\u5B66\u4F1A",
+    "Type": "\u5B66\u4F1A\u30FB\u5C55\u793A\u4F1A\uFF08\u6700\u7D42\u65E5\uFF09",
+    "Start": "17:15",
+    "End": "20:00",
+    "Attendance": 3110,
+    "Scale": "\u4E2D",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F\uFF0B\u81EA\u52D5\u53D6\u5F97\uFF1A\u65B0\u6F5F\u5E02\u5927\u898F\u6A21\u30A4\u30D9\u30F3\u30C8",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=11\u0026year=2026",
+    "OutOfPrefecture": 3045,
+    "Overseas": 15,
+    "Note": ""
+  },
+  {
+    "Date": "2026-11-23",
+    "Venue": "\u30C7\u30F3\u30AB\u30D3\u30C3\u30B0\u30B9\u30EF\u30F3\u30B9\u30BF\u30B8\u30A2\u30E0\u65B0\u6F5F",
+    "Name": "WE\u30EA\u30FC\u30B0",
+    "Type": "\u30B9\u30DD\u30FC\u30C4",
+    "Start": "",
+    "End": "",
+    "Attendance": 0,
+    "Scale": "\u5927",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u65B0\u6F5F\u5E02\u5927\u898F\u6A21\u30A4\u30D9\u30F3\u30C8",
+    "SourceUrl": "https://www.city.niigata.lg.jp/kanko/kanko/promotion/eventschedule.html",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-11-23",
+    "Venue": "\u770C\u6C11\u4F1A\u9928",
+    "Name": "Tani Yuuki",
+    "Type": "\u30B3\u30F3\u30B5\u30FC\u30C8",
+    "Start": "",
+    "End": "",
+    "Attendance": 0,
+    "Scale": "\u4E2D",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u65B0\u6F5F\u5E02\u5927\u898F\u6A21\u30A4\u30D9\u30F3\u30C8",
+    "SourceUrl": "https://www.city.niigata.lg.jp/kanko/kanko/promotion/eventschedule.html",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-11-23",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u4E00\u822C\u5411\u3051 \u30D9\u30A4\u30D6\u30EC\u30FC\u30C9\u30A8\u30C3\u30AF\u30B9 \u30A8\u30AF\u30B9\u30C8\u30EA\u30FC\u30E0\u30AB\u30C3\u30D7",
+    "Type": "\u305D\u306E\u4ED6",
+    "Start": "17:15",
+    "End": "20:00",
+    "Attendance": 8000,
+    "Scale": "\u5927",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=11\u0026year=2026",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-11-23",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u4E00\u822C\u5411\u3051 \u7B2C38\u56DE\u65E5\u672C\u7642\u8853\u5B66\u4F1A",
+    "Type": "\u5B66\u4F1A\u30FB\u5C55\u793A\u4F1A",
+    "Start": "17:15",
+    "End": "20:00",
+    "Attendance": 2500,
+    "Scale": "\u4E2D",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=11\u0026year=2026",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-11-24",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u4E00\u822C\u5411\u3051 \u65B0\u6F5F\u5E02\u4E3B\u50AC\u30BB\u30DF\u30CA\u30FC",
+    "Type": "\u305D\u306E\u4ED6",
+    "Start": "13:00",
+    "End": "17:00",
+    "Attendance": 2500,
+    "Scale": "\u4E2D",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=11\u0026year=2026",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-11-24",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u4E00\u822C\u5411\u3051 \u4EE4\u548C8\u5E74\u5EA6 \u904E\u91CD\u52B4\u50CD\u89E3\u6D88\u306E\u305F\u3081\u306E\u30BB\u30DF\u30CA\u30FC",
+    "Type": "\u305D\u306E\u4ED6",
+    "Start": "14:00",
+    "End": "16:30",
+    "Attendance": 2500,
+    "Scale": "\u4E2D",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=11\u0026year=2026",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-11-24",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u95A2\u4FC2\u8005\u306E\u307F \u65B0\u6F5F\u770C\u5EFA\u8A2D\u696D\u5354\u4F1A\u300C\u4F01\u696D\u7814\u7A76\u30D5\u30A7\u30B9\u30BF\u300D",
+    "Type": "\u796D\u308A\u30FB\u30DE\u30EB\u30B7\u30A7",
+    "Start": "17:15",
+    "End": "20:00",
+    "Attendance": 8000,
+    "Scale": "\u5927",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=11\u0026year=2026",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-11-24",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u95A2\u4FC2\u8005\u306E\u307F \u98DF\u306E\u65B0\u6F5F\u56FD\u969B\u8CDE\u300C\u7B2C9\u56DE\u8868\u5F70\u5F0F\u30FB\u53D7\u8CDE\u8005\u8A18\u5FF5\u8B1B\u6F14\u4F1A\u300D",
+    "Type": "\u305D\u306E\u4ED6",
+    "Start": "17:15",
+    "End": "20:00",
+    "Attendance": 8000,
+    "Scale": "\u5927",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=11\u0026year=2026",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-11-25",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u95A2\u4FC2\u8005\u306E\u307F Made in \u65B0\u6F5F \u65B0\u6280\u8853\uFF3B\u571F\u6728\u30FB\u5EFA\u7BC9\uFF3D\u5C55\u793A\u30FB\u767A\u8868\u4F1A",
+    "Type": "\u305D\u306E\u4ED6",
+    "Start": "10:00",
+    "End": "16:30",
+    "Attendance": 8000,
+    "Scale": "\u5927",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=11\u0026year=2026",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-11-25",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u4E00\u822C\u5411\u3051 \u4EE4\u548C\uFF18\u5E74\u5EA6\u52B4\u50CD\u5B89\u5168\u885B\u751F\u6CD5\u6539\u6B63\u306B\u4FC2\u308B\u8AAC\u660E\u4F1A",
+    "Type": "\u305D\u306E\u4ED6",
+    "Start": "13:00",
+    "End": "17:00",
+    "Attendance": 2500,
+    "Scale": "\u4E2D",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=11\u0026year=2026",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-11-27",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u95A2\u4FC2\u8005\u306E\u307F \u7B2C26\u56DE\u65E5\u672C\u30AF\u30EA\u30CB\u30AB\u30EB\u30D1\u30B9\u5B66\u4F1A\u5B66\u8853\u96C6\u4F1A",
+    "Type": "\u5B66\u4F1A\u30FB\u5C55\u793A\u4F1A\uFF08\u521D\u65E5\u30FB\u5BBF\u6CCA\u9700\u8981\uFF09",
+    "Start": "17:15",
+    "End": "20:00",
+    "Attendance": 8000,
+    "Scale": "\u5927",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F\uFF0B\u81EA\u52D5\u53D6\u5F97\uFF1A\u65B0\u6F5F\u5E02\u5927\u898F\u6A21\u30A4\u30D9\u30F3\u30C8",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=11\u0026year=2026",
+    "OutOfPrefecture": 2900,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-11-28",
+    "Venue": "JR\u65B0\u6F5F\u99C5CoCoLo\u65B0\u6F5F\u30AC\u30BF\u30EA\u30A6\u30E0\u3001\u65B0\u6F5F\u99C5\u5357\u53E3\u4E2D\u592E\u5E83\u5834",
+    "Name": "\u306B\u3044\u304C\u305F\u74B0\u5883\u30D5\u30A7\u30B9\u30C6\u30A3\u30D0\u30EB2026",
+    "Type": "\u5B66\u4F1A\u30FB\u5C55\u793A\u4F1A",
+    "Start": "",
+    "End": "",
+    "Attendance": 3000,
+    "Scale": "\u4E2D",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u65B0\u6F5F\u5E02\u5927\u898F\u6A21\u30A4\u30D9\u30F3\u30C8",
+    "SourceUrl": "https://www.city.niigata.lg.jp/kanko/kanko/promotion/eventschedule.html",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-11-28",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u95A2\u4FC2\u8005\u306E\u307F \u7B2C26\u56DE\u65E5\u672C\u30AF\u30EA\u30CB\u30AB\u30EB\u30D1\u30B9\u5B66\u4F1A\u5B66\u8853\u96C6\u4F1A",
+    "Type": "\u5B66\u4F1A\u30FB\u5C55\u793A\u4F1A\uFF08\u6700\u7D42\u65E5\uFF09",
+    "Start": "17:15",
+    "End": "20:00",
+    "Attendance": 8000,
+    "Scale": "\u5927",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F\uFF0B\u81EA\u52D5\u53D6\u5F97\uFF1A\u65B0\u6F5F\u5E02\u5927\u898F\u6A21\u30A4\u30D9\u30F3\u30C8",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=11\u0026year=2026",
+    "OutOfPrefecture": 2900,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-11-29",
+    "Venue": "\u770C\u6C11\u4F1A\u9928",
+    "Name": "\u5168\u56FD\u5171\u540C\u5236\u4F5C\u30AA\u30DA\u30E9 \u30F4\u30A7\u30EB\u30C7\u30A3\uFF0F\u6B4C\u5287\u300E\u30A4\u30EB\u30FB\u30C8\u30ED\u30F4\u30A1\u30C8\u30FC\u30EC\u300F",
+    "Type": "\u30B3\u30F3\u30B5\u30FC\u30C8",
+    "Start": "",
+    "End": "",
+    "Attendance": 0,
+    "Scale": "\u4E2D",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u65B0\u6F5F\u5E02\u5927\u898F\u6A21\u30A4\u30D9\u30F3\u30C8",
+    "SourceUrl": "https://www.city.niigata.lg.jp/kanko/kanko/promotion/eventschedule.html",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-11-29",
+    "Venue": "\u30C7\u30F3\u30AB\u30D3\u30C3\u30B0\u30B9\u30EF\u30F3\u30B9\u30BF\u30B8\u30A2\u30E0\u65B0\u6F5F",
+    "Name": "\u30A2\u30EB\u30D3\u30EC\u30C3\u30AF\u30B9\u65B0\u6F5F vs \u30F4\u30A1\u30F3\u30D5\u30A9\u30FC\u30EC\u7532\u5E9C",
+    "Type": "\u30B5\u30C3\u30AB\u30FC",
+    "Start": "14:00",
+    "End": "16:15",
+    "Attendance": 22000,
+    "Scale": "\u5927",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u65B0\u6F5F\u5E02\u5927\u898F\u6A21\u30A4\u30D9\u30F3\u30C8\uFF0B\u81EA\u52D5\u53D6\u5F97\uFF1A\u30A2\u30EB\u30D3\u30EC\u30C3\u30AF\u30B9\u65B0\u6F5F\u516C\u5F0F",
+    "SourceUrl": "https://www.city.niigata.lg.jp/kanko/kanko/promotion/eventschedule.html",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": "\u5BFE\u6226\u76F8\u624B\uFF1A\u30F4\u30A1\u30F3\u30D5\u30A9\u30FC\u30EC\u7532\u5E9C\uFF08\u5C71\u68A8\u770C\u30FB\u4E2D\u8DDD\u96E2\uFF09\uFF5C\u73FE\u5728\u9806\u4F4D\uFF1A\u65B0\u6F5F4\u4F4D / \u7532\u5E9C20\u4F4D\uFF5C\u6CE8\u76EE\u5EA6\uFF1A\u9AD8\uFF08\u4E0A\u4F4D\u30C1\u30FC\u30E0\u7D61\u307F\uFF09\uFF5C\u30A2\u30A6\u30A7\u30A4\u6765\u770C\u5F71\u97FF\uFF1A\u3084\u3084\u9AD8\u3081"
+  },
+  {
+    "Date": "2026-11-30",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u4E00\u822C\u5411\u3051 \u7B2C5\u56DE\u4E16\u754C\u6E7F\u5730\u90FD\u5E02\u30CD\u30C3\u30C8\u30EF\u30FC\u30AF\u5E02\u9577\u4F1A\u8B70",
+    "Type": "\u305D\u306E\u4ED6",
+    "Start": "17:15",
+    "End": "20:00",
+    "Attendance": 8000,
+    "Scale": "\u5927",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=12\u0026year=2026",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-12-01",
+    "Venue": "\u65B0\u6F5F\u99C5\u5357\u53E3\u5468\u8FBA",
+    "Name": "CoCoLo\u65B0\u6F5F\u5E97NEW SHOP\u300E\u4F0A\u53F3\u885B\u9580\u30AB\u30D5\u30A7\u300F\u30AA\u30FC\u30D7\u30F3\uFF01",
+    "Type": "\u796D\u308A\u30FB\u30DE\u30EB\u30B7\u30A7",
+    "Start": "",
+    "End": "",
+    "Attendance": 2500,
+    "Scale": "\u4E2D",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1ACoCoLo\u65B0\u6F5F\u516C\u5F0F",
+    "SourceUrl": "https://jenic.jp/cocolo/news/detail.php?sc_name=niigata\u0026id=3996",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": "CoCoLo\u65B0\u6F5F\u516C\u5F0F\u30A4\u30D9\u30F3\u30C8\u4E00\u89A7\u304B\u3089\u81EA\u52D5\u767A\u898B\u3002\u516C\u8868\u6765\u5834\u8005\u6570\u672A\u53D6\u5F97\u306E\u305F\u3081\u898F\u6A21\u300C\u4E2D\u300D\u306E\u6A19\u6E96\u60F3\u5B9A2,500\u4EBA\u3092\u4E88\u6E2C\u7528\u306B\u4F7F\u7528\u3002"
+  },
+  {
+    "Date": "2026-12-01",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u4E00\u822C\u5411\u3051 \u7B2C5\u56DE\u4E16\u754C\u6E7F\u5730\u90FD\u5E02\u30CD\u30C3\u30C8\u30EF\u30FC\u30AF\u5E02\u9577\u4F1A\u8B70",
+    "Type": "\u305D\u306E\u4ED6",
+    "Start": "17:15",
+    "End": "20:00",
+    "Attendance": 8000,
+    "Scale": "\u5927",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=12\u0026year=2026",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-12-03",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u4E00\u822C\u5411\u3051 \u30EA\u30FC\u30C7\u30A3\u30F3\u30B0\u30FB\u30A8\u30C3\u30B8\u30FB\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8\u30FB\u30BB\u30DF\u30CA\u30FC\uFF08LEMS\uFF09",
+    "Type": "\u305D\u306E\u4ED6",
+    "Start": "17:15",
+    "End": "20:00",
+    "Attendance": 8000,
+    "Scale": "\u5927",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=12\u0026year=2026",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-12-03",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u95A2\u4FC2\u8005\u306E\u307F RICOH Value Presentation 2026 in \u65B0\u6F5F",
+    "Type": "\u305D\u306E\u4ED6",
+    "Start": "9:30",
+    "End": "17:00",
+    "Attendance": 8000,
+    "Scale": "\u5927",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=12\u0026year=2026",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-12-04",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u4E00\u822C\u5411\u3051 \u30EA\u30FC\u30C7\u30A3\u30F3\u30B0\u30FB\u30A8\u30C3\u30B8\u30FB\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8\u30FB\u30BB\u30DF\u30CA\u30FC\uFF08LEMS\uFF09",
+    "Type": "\u305D\u306E\u4ED6",
+    "Start": "17:15",
+    "End": "20:00",
+    "Attendance": 8000,
+    "Scale": "\u5927",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=12\u0026year=2026",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-12-04",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u95A2\u4FC2\u8005\u306E\u307F RICOH Value Presentation 2026 in \u65B0\u6F5F",
+    "Type": "\u305D\u306E\u4ED6",
+    "Start": "9:30",
+    "End": "17:00",
+    "Attendance": 8000,
+    "Scale": "\u5927",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=12\u0026year=2026",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-12-05",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u4E00\u822C\u5411\u3051 \u7B2C9\u56DE \u65E5\u672C\u9152\u5B66\u56FD\u969B\u30B7\u30F3\u30DD\u30B8\u30A6\u30E0",
+    "Type": "\u305D\u306E\u4ED6",
+    "Start": "13:00",
+    "End": "16:10",
+    "Attendance": 8000,
+    "Scale": "\u5927",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=12\u0026year=2026",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-12-05",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u4E00\u822C\u5411\u3051 GLAY ARENA TOUR 2026-2027 \u0022EXOFIRE\u0022",
+    "Type": "\u30B3\u30F3\u30B5\u30FC\u30C8",
+    "Start": "17:15",
+    "End": "20:00",
+    "Attendance": 8000,
+    "Scale": "\u5927",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F\uFF0B\u81EA\u52D5\u53D6\u5F97\uFF1A\u65B0\u6F5F\u5E02\u5927\u898F\u6A21\u30A4\u30D9\u30F3\u30C8",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=12\u0026year=2026",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-12-05",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u4E00\u822C\u5411\u3051 GLAY\u30B3\u30F3\u30B5\u30FC\u30C8",
+    "Type": "\u30B3\u30F3\u30B5\u30FC\u30C8",
+    "Start": "17:15",
+    "End": "20:00",
+    "Attendance": 8000,
+    "Scale": "\u5927",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F\uFF0B\u81EA\u52D5\u53D6\u5F97\uFF1A\u65B0\u6F5F\u5E02\u5927\u898F\u6A21\u30A4\u30D9\u30F3\u30C8",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=12\u0026year=2026",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-12-05",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u4E00\u822C\u5411\u3051 \u306B\u3044\u304C\u305F\u5C31\u8077\u5FDC\u63F4\u56E3\u4E3B\u50AC \u4ED5\u4E8B\u7814\u7A76\u30D5\u30A7\u30B9\u30BF",
+    "Type": "\u796D\u308A\u30FB\u30DE\u30EB\u30B7\u30A7",
+    "Start": "17:15",
+    "End": "20:00",
+    "Attendance": 8000,
+    "Scale": "\u5927",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=12\u0026year=2026",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-12-05",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u4E00\u822C\u5411\u3051 \u795E\u4EBA\u30E9\u30A4\u30D6",
+    "Type": "\u30B3\u30F3\u30B5\u30FC\u30C8",
+    "Start": "17:15",
+    "End": "20:00",
+    "Attendance": 8000,
+    "Scale": "\u5927",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=12\u0026year=2026",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-12-06",
+    "Venue": "\u7523\u696D\u632F\u8208\u30BB\u30F3\u30BF\u30FC",
+    "Name": "GATAKET",
+    "Type": "\u305D\u306E\u4ED6",
+    "Start": "",
+    "End": "",
+    "Attendance": 0,
+    "Scale": "\u4E2D",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u65B0\u6F5F\u5E02\u5927\u898F\u6A21\u30A4\u30D9\u30F3\u30C8",
+    "SourceUrl": "https://www.city.niigata.lg.jp/kanko/kanko/promotion/eventschedule.html",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-12-06",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u4E00\u822C\u5411\u3051 \u7B2C9\u56DE \u65E5\u672C\u9152\u5B66\u56FD\u969B\u30B7\u30F3\u30DD\u30B8\u30A6\u30E0",
+    "Type": "\u305D\u306E\u4ED6",
+    "Start": "13:00",
+    "End": "16:10",
+    "Attendance": 8000,
+    "Scale": "\u5927",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=12\u0026year=2026",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-12-06",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u4E00\u822C\u5411\u3051 \u4EE4\u548C8\u5E74\u5EA6 \u89E3\u4F53\u5DE5\u4E8B\u65BD\u5DE5\u6280\u58EB\u8A66\u9A13",
+    "Type": "\u305D\u306E\u4ED6",
+    "Start": "17:15",
+    "End": "20:00",
+    "Attendance": 8000,
+    "Scale": "\u5927",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=12\u0026year=2026",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-12-06",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u4E00\u822C\u5411\u3051 \u795E\u4EBA5\u6642\u9593\u8B1B\u6F14\u4F1A",
+    "Type": "\u305D\u306E\u4ED6",
+    "Start": "17:15",
+    "End": "20:00",
+    "Attendance": 8000,
+    "Scale": "\u5927",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=12\u0026year=2026",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-12-09",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u95A2\u4FC2\u8005\u306E\u307F \u7D4C\u55B6\u8AB2\u984C\u3068\u3057\u3066\u8003\u3048\u308B\u300C\u696D\u52D9\u306E\u5C5E\u4EBA\u5316\u300D\u5BFE\u7B56 -\u300C\u3042\u306E\u4EBA\u3057\u304B\u3067\u304D\u306A\u3044\u300D\u304B\u3089\u629C\u3051\u51FA\u3059\u4ED5\u7D44\u307F\u3065\u304F\u308A",
+    "Type": "\u305D\u306E\u4ED6",
+    "Start": "13:00",
+    "End": "17:00",
+    "Attendance": 2500,
+    "Scale": "\u4E2D",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=12\u0026year=2026",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-12-10",
+    "Venue": "\u770C\u6C11\u4F1A\u9928",
+    "Name": "\u8449\u52A0\u702C\u592A\u90CE",
+    "Type": "\u30B3\u30F3\u30B5\u30FC\u30C8",
+    "Start": "",
+    "End": "",
+    "Attendance": 0,
+    "Scale": "\u4E2D",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u65B0\u6F5F\u5E02\u5927\u898F\u6A21\u30A4\u30D9\u30F3\u30C8",
+    "SourceUrl": "https://www.city.niigata.lg.jp/kanko/kanko/promotion/eventschedule.html",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-12-11",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u95A2\u4FC2\u8005\u306E\u307F \u7B2C43\u56DE\u65E5\u672C\u969C\u5BB3\u8005\u6B6F\u79D1\u5B66\u4F1A\u7DCF\u4F1A\u304A\u3088\u3073\u5B66\u8853\u5927\u4F1A",
+    "Type": "\u5B66\u4F1A\u30FB\u5C55\u793A\u4F1A\uFF08\u521D\u65E5\u30FB\u5BBF\u6CCA\u9700\u8981\uFF09",
+    "Start": "17:15",
+    "End": "20:00",
+    "Attendance": 2500,
+    "Scale": "\u4E2D",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=12\u0026year=2026",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-12-12",
+    "Venue": "\u770C\u6C11\u4F1A\u9928",
+    "Name": "\u9F13\u7AE5\u5341\u4E8C\u6708\u516C\u6F14",
+    "Type": "\u30B3\u30F3\u30B5\u30FC\u30C8",
+    "Start": "",
+    "End": "",
+    "Attendance": 0,
+    "Scale": "\u4E2D",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u65B0\u6F5F\u5E02\u5927\u898F\u6A21\u30A4\u30D9\u30F3\u30C8",
+    "SourceUrl": "https://www.city.niigata.lg.jp/kanko/kanko/promotion/eventschedule.html",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-12-12",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u95A2\u4FC2\u8005\u306E\u307F \u7B2C43\u56DE\u65E5\u672C\u969C\u5BB3\u8005\u6B6F\u79D1\u5B66\u4F1A\u7DCF\u4F1A\u304A\u3088\u3073\u5B66\u8853\u5927\u4F1A",
+    "Type": "\u5B66\u4F1A\u30FB\u5C55\u793A\u4F1A\uFF08\u4E2D\u65E5\u30FB\u5BBF\u6CCA\u9700\u8981\uFF09",
+    "Start": "17:15",
+    "End": "20:00",
+    "Attendance": 2500,
+    "Scale": "\u4E2D",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F\uFF0B\u81EA\u52D5\u53D6\u5F97\uFF1A\u65B0\u6F5F\u5E02\u5927\u898F\u6A21\u30A4\u30D9\u30F3\u30C8",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=12\u0026year=2026",
+    "OutOfPrefecture": 1900,
+    "Overseas": 50,
+    "Note": ""
+  },
+  {
+    "Date": "2026-12-13",
+    "Venue": "\u65B0\u6F5F\u30C6\u30EB\u30B5",
+    "Name": "\u30D2\u30EB\u30AF\u30E9\u30A4\u30E0",
+    "Type": "\u30B3\u30F3\u30B5\u30FC\u30C8",
+    "Start": "",
+    "End": "",
+    "Attendance": 0,
+    "Scale": "\u4E2D",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u65B0\u6F5F\u5E02\u5927\u898F\u6A21\u30A4\u30D9\u30F3\u30C8",
+    "SourceUrl": "https://www.city.niigata.lg.jp/kanko/kanko/promotion/eventschedule.html",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-12-13",
+    "Venue": "\u770C\u6C11\u4F1A\u9928",
+    "Name": "\u9F13\u7AE5\u5341\u4E8C\u6708\u516C\u6F14",
+    "Type": "\u30B3\u30F3\u30B5\u30FC\u30C8",
+    "Start": "",
+    "End": "",
+    "Attendance": 0,
+    "Scale": "\u4E2D",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u65B0\u6F5F\u5E02\u5927\u898F\u6A21\u30A4\u30D9\u30F3\u30C8",
+    "SourceUrl": "https://www.city.niigata.lg.jp/kanko/kanko/promotion/eventschedule.html",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-12-13",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u4E00\u822C\u5411\u3051 \u30DE\u30A4\u30CA\u30D3 \u30A4\u30F3\u30BF\u30FC\u30F3\u30B7\u30C3\u30D7\uFF06\u30AD\u30E3\u30EA\u30A2\u767A\u898B\u30D5\u30A7\u30A2 \u65B0\u6F5F\u4F1A\u5834",
+    "Type": "\u305D\u306E\u4ED6",
+    "Start": "13:00",
+    "End": "17:00",
+    "Attendance": 8000,
+    "Scale": "\u5927",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=12\u0026year=2026",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-12-13",
+    "Venue": "\u30C7\u30F3\u30AB\u30D3\u30C3\u30B0\u30B9\u30EF\u30F3",
+    "Name": "\u30A2\u30EB\u30D3\u30EC\u30C3\u30AF\u30B9\u65B0\u6F5F\u30DB\u30FC\u30E0\u6226 vs ",
+    "Type": "\u30B5\u30C3\u30AB\u30FC",
+    "Start": "14:00",
+    "End": "16:15",
+    "Attendance": 22000,
+    "Scale": "\u5927",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u30A2\u30EB\u30D3\u30EC\u30C3\u30AF\u30B9\u65B0\u6F5F\u516C\u5F0F",
+    "SourceUrl": "https://www.albirex.co.jp/game/",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-12-13",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u95A2\u4FC2\u8005\u306E\u307F \u7B2C43\u56DE\u65E5\u672C\u969C\u5BB3\u8005\u6B6F\u79D1\u5B66\u4F1A\u7DCF\u4F1A\u304A\u3088\u3073\u5B66\u8853\u5927\u4F1A",
+    "Type": "\u5B66\u4F1A\u30FB\u5C55\u793A\u4F1A\uFF08\u6700\u7D42\u65E5\uFF09",
+    "Start": "17:15",
+    "End": "20:00",
+    "Attendance": 2500,
+    "Scale": "\u4E2D",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F\uFF0B\u81EA\u52D5\u53D6\u5F97\uFF1A\u65B0\u6F5F\u5E02\u5927\u898F\u6A21\u30A4\u30D9\u30F3\u30C8",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=12\u0026year=2026",
+    "OutOfPrefecture": 1900,
+    "Overseas": 50,
+    "Note": ""
+  },
+  {
+    "Date": "2026-12-14",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u95A2\u4FC2\u8005\u306E\u307F \u65B0\u6F5F\u770C\u5F37\u5EA6\u884C\u52D5\u969C\u5BB3\u652F\u63F4\u8005\u990A\u6210\u7814\u4FEE\uFF08\u5B9F\u8DF5\u7814\u4FEE\uFF09",
+    "Type": "\u305D\u306E\u4ED6",
+    "Start": "9:00",
+    "End": "17:00",
+    "Attendance": 2500,
+    "Scale": "\u4E2D",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=12\u0026year=2026",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-12-15",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u95A2\u4FC2\u8005\u306E\u307F \u65B0\u6F5F\u770C\u5F37\u5EA6\u884C\u52D5\u969C\u5BB3\u652F\u63F4\u8005\u990A\u6210\u7814\u4FEE\uFF08\u5B9F\u8DF5\u7814\u4FEE\uFF09",
+    "Type": "\u305D\u306E\u4ED6",
+    "Start": "9:00",
+    "End": "17:00",
+    "Attendance": 2500,
+    "Scale": "\u4E2D",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=12\u0026year=2026",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-12-19",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u4E00\u822C\u5411\u3051 \u51AC\u30B9\u30DD\u203CWINTER SPORTS FESTA season26",
+    "Type": "\u305D\u306E\u4ED6",
+    "Start": "10:00",
+    "End": "18:00",
+    "Attendance": 8000,
+    "Scale": "\u5927",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=12\u0026year=2026",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-12-20",
+    "Venue": "\u65B0\u6F5F\u30C6\u30EB\u30B5",
+    "Name": "\u6253\u9996\u7344\u9580\u540C\u597D\u4F1A",
+    "Type": "\u30B3\u30F3\u30B5\u30FC\u30C8",
+    "Start": "",
+    "End": "",
+    "Attendance": 0,
+    "Scale": "\u4E2D",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u65B0\u6F5F\u5E02\u5927\u898F\u6A21\u30A4\u30D9\u30F3\u30C8",
+    "SourceUrl": "https://www.city.niigata.lg.jp/kanko/kanko/promotion/eventschedule.html",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-12-20",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u4E00\u822C\u5411\u3051 \u51AC\u30B9\u30DD\u203CWINTER SPORTS FESTA season26",
+    "Type": "\u305D\u306E\u4ED6",
+    "Start": "10:00",
+    "End": "18:00",
+    "Attendance": 8000,
+    "Scale": "\u5927",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=12\u0026year=2026",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-12-20",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u4E00\u822C\u5411\u3051 \u306B\u3044\u304C\u305F\u5C31\u8077\u5FDC\u63F4\u56E3\u4E3B\u50AC \u4ED5\u4E8B\u7814\u7A76\u30D5\u30A7\u30B9\u30BF IT\u696D\u754C\u30BB\u30DF\u30CA\u30FC",
+    "Type": "\u796D\u308A\u30FB\u30DE\u30EB\u30B7\u30A7",
+    "Start": "17:15",
+    "End": "20:00",
+    "Attendance": 8000,
+    "Scale": "\u5927",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=12\u0026year=2026",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-12-26",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u51AC\u306E\u65E5\u672C\u6D77\u30B7\u30EA\u30FC\u30BA",
+    "Type": "\u30B3\u30F3\u30B5\u30FC\u30C8",
+    "Start": "",
+    "End": "",
+    "Attendance": 0,
+    "Scale": "\u5927",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u65B0\u6F5F\u5E02\u5927\u898F\u6A21\u30A4\u30D9\u30F3\u30C8",
+    "SourceUrl": "https://www.city.niigata.lg.jp/kanko/kanko/promotion/eventschedule.html",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2026-12-26",
+    "Venue": "\u770C\u6C11\u4F1A\u9928",
+    "Name": "\u30C1\u30E3\u30A4\u30B3\u30D5\u30B9\u30AD\u30FC\u30FB\u30D0\u30EC\u30A8\u5287\u5834\u300E\u304F\u308B\u307F\u5272\u308A\u4EBA\u5F62\u300F",
+    "Type": "\u30B3\u30F3\u30B5\u30FC\u30C8",
+    "Start": "",
+    "End": "",
+    "Attendance": 0,
+    "Scale": "\u4E2D",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u65B0\u6F5F\u5E02\u5927\u898F\u6A21\u30A4\u30D9\u30F3\u30C8",
+    "SourceUrl": "https://www.city.niigata.lg.jp/kanko/kanko/promotion/eventschedule.html",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2027-01-04",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u4E00\u822C\u5411\u3051 \u306B\u3044\u304C\u305F\u5C31\u8077\u5FDC\u63F4\u56E3\u4E3B\u50AC \u4ED5\u4E8B\u7814\u7A76\u30D5\u30A7\u30B9\u30BF",
+    "Type": "\u796D\u308A\u30FB\u30DE\u30EB\u30B7\u30A7",
+    "Start": "13:00",
+    "End": "17:00",
+    "Attendance": 8000,
+    "Scale": "\u5927",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=1\u0026year=2027",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2027-01-10",
+    "Venue": "\u770C\u6C11\u4F1A\u9928",
+    "Name": "ASKA",
+    "Type": "\u30B3\u30F3\u30B5\u30FC\u30C8",
+    "Start": "",
+    "End": "",
+    "Attendance": 0,
+    "Scale": "\u4E2D",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u65B0\u6F5F\u5E02\u5927\u898F\u6A21\u30A4\u30D9\u30F3\u30C8",
+    "SourceUrl": "https://www.city.niigata.lg.jp/kanko/kanko/promotion/eventschedule.html",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2027-01-10",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u4E00\u822C\u5411\u3051 \u3044\u3064\u548C\u3075\u308B\u30FC\u308C\u65B0\u6F5F\u5E97 \u4E8C\u5341\u6B73\u306E\u3064\u3069\u3044\u304A\u652F\u5EA6\u4F1A\u5834",
+    "Type": "\u305D\u306E\u4ED6",
+    "Start": "17:15",
+    "End": "20:00",
+    "Attendance": 8000,
+    "Scale": "\u5927",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=1\u0026year=2027",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2027-01-10",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u4E00\u822C\u5411\u3051 \u4EE4\u548C\uFF18\u5E74\u5EA6\u65B0\u6F5F\u5E02\u4E8C\u5341\u6B73\u306E\u3064\u3069\u3044",
+    "Type": "\u305D\u306E\u4ED6",
+    "Start": "17:15",
+    "End": "20:00",
+    "Attendance": 8000,
+    "Scale": "\u5927",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=1\u0026year=2027",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2027-01-10",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u95A2\u4FC2\u8005\u306E\u307F \u30A4\u30EF\u30B5\u30AD\u7F8E\u5BB9\u5BA4 \u4E8C\u5341\u6B73\u306E\u3064\u3069\u3044\u304A\u652F\u5EA6\u4F1A\u5834",
+    "Type": "\u305D\u306E\u4ED6",
+    "Start": "17:15",
+    "End": "20:00",
+    "Attendance": 2500,
+    "Scale": "\u4E2D",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=1\u0026year=2027",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2027-01-10",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u4E00\u822C\u5411\u3051 \u30B7\u30E3\u30EC\u30CB\u30FC\u5408\u540C\u6210\u4EBA\u5F0F\u652F\u5EA6",
+    "Type": "\u305D\u306E\u4ED6",
+    "Start": "7:00",
+    "End": "17:00",
+    "Attendance": 2500,
+    "Scale": "\u4E2D",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=1\u0026year=2027",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2027-01-10",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u4E00\u822C\u5411\u3051 \uFF12\uFF10\u6B73\u306E\u3064\u3069\u3044\u304A\u652F\u5EA6\u4F1A\u5834 \uFF21\uFF4D\uFF4F\uFF55\uFF52\u7F8E\u5BB9\u5BA4",
+    "Type": "\u305D\u306E\u4ED6",
+    "Start": "7:00",
+    "End": "17:00",
+    "Attendance": 2500,
+    "Scale": "\u4E2D",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=1\u0026year=2027",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2027-01-15",
+    "Venue": "\u65B0\u6F5F\u30C6\u30EB\u30B5",
+    "Name": "\u30B9\u30AC \u30B7\u30AB\u30AA",
+    "Type": "\u30B3\u30F3\u30B5\u30FC\u30C8",
+    "Start": "",
+    "End": "",
+    "Attendance": 0,
+    "Scale": "\u4E2D",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u65B0\u6F5F\u5E02\u5927\u898F\u6A21\u30A4\u30D9\u30F3\u30C8",
+    "SourceUrl": "https://www.city.niigata.lg.jp/kanko/kanko/promotion/eventschedule.html",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2027-01-15",
+    "Venue": "\u770C\u6C11\u4F1A\u9928",
+    "Name": "\u0026TEAM",
+    "Type": "\u30B3\u30F3\u30B5\u30FC\u30C8",
+    "Start": "",
+    "End": "",
+    "Attendance": 0,
+    "Scale": "\u4E2D",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u65B0\u6F5F\u5E02\u5927\u898F\u6A21\u30A4\u30D9\u30F3\u30C8",
+    "SourceUrl": "https://www.city.niigata.lg.jp/kanko/kanko/promotion/eventschedule.html",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2027-01-16",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "STARGLOW",
+    "Type": "\u30B3\u30F3\u30B5\u30FC\u30C8",
+    "Start": "",
+    "End": "",
+    "Attendance": 0,
+    "Scale": "\u5927",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u65B0\u6F5F\u5E02\u5927\u898F\u6A21\u30A4\u30D9\u30F3\u30C8",
+    "SourceUrl": "https://www.city.niigata.lg.jp/kanko/kanko/promotion/eventschedule.html",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2027-01-16",
+    "Venue": "\u770C\u6C11\u4F1A\u9928",
+    "Name": "\u0026TEAM",
+    "Type": "\u30B3\u30F3\u30B5\u30FC\u30C8",
+    "Start": "",
+    "End": "",
+    "Attendance": 0,
+    "Scale": "\u4E2D",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u65B0\u6F5F\u5E02\u5927\u898F\u6A21\u30A4\u30D9\u30F3\u30C8",
+    "SourceUrl": "https://www.city.niigata.lg.jp/kanko/kanko/promotion/eventschedule.html",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2027-01-17",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "STARGLOW",
+    "Type": "\u30B3\u30F3\u30B5\u30FC\u30C8",
+    "Start": "",
+    "End": "",
+    "Attendance": 0,
+    "Scale": "\u5927",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u65B0\u6F5F\u5E02\u5927\u898F\u6A21\u30A4\u30D9\u30F3\u30C8",
+    "SourceUrl": "https://www.city.niigata.lg.jp/kanko/kanko/promotion/eventschedule.html",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2027-01-21",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u95A2\u4FC2\u8005\u306E\u307F \u7B2C50\u56DE\u65E5\u672C\u3066\u3093\u304B\u3093\u5916\u79D1\u5B66\u4F1A",
+    "Type": "\u5B66\u4F1A\u30FB\u5C55\u793A\u4F1A\uFF08\u521D\u65E5\u30FB\u5BBF\u6CCA\u9700\u8981\uFF09",
+    "Start": "17:15",
+    "End": "20:00",
+    "Attendance": 8000,
+    "Scale": "\u5927",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=1\u0026year=2027",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2027-01-22",
+    "Venue": "\u308A\u3085\u30FC\u3068\u3074\u3042\u7B49",
+    "Name": "\u7B2C49\u56DE\u65B0\u6F5F\u30B8\u30E3\u30BA\u30B9\u30C8\u30EA\u30FC\u30C8",
+    "Type": "\u305D\u306E\u4ED6",
+    "Start": "",
+    "End": "",
+    "Attendance": 1000,
+    "Scale": "\u4E2D",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u65B0\u6F5F\u5E02\u5927\u898F\u6A21\u30A4\u30D9\u30F3\u30C8",
+    "SourceUrl": "https://www.city.niigata.lg.jp/kanko/kanko/promotion/eventschedule.html",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2027-01-22",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u95A2\u4FC2\u8005\u306E\u307F \u7B2C50\u56DE\u65E5\u672C\u3066\u3093\u304B\u3093\u5916\u79D1\u5B66\u4F1A",
+    "Type": "\u5B66\u4F1A\u30FB\u5C55\u793A\u4F1A\uFF08\u6700\u7D42\u65E5\uFF09",
+    "Start": "17:15",
+    "End": "20:00",
+    "Attendance": 8000,
+    "Scale": "\u5927",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=1\u0026year=2027",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2027-01-22",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u95A2\u4FC2\u8005\u306E\u307F \u7B2C66\u56DE\u65E5\u672C\u5B9A\u4F4D\u30FB\u6A5F\u80FD\u795E\u7D4C\u5916\u79D1\u5B66\u4F1A",
+    "Type": "\u5B66\u4F1A\u30FB\u5C55\u793A\u4F1A\uFF08\u521D\u65E5\u30FB\u5BBF\u6CCA\u9700\u8981\uFF09",
+    "Start": "17:15",
+    "End": "20:00",
+    "Attendance": 8000,
+    "Scale": "\u5927",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=1\u0026year=2027",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2027-01-23",
+    "Venue": "\u308A\u3085\u30FC\u3068\u3074\u3042\u7B49",
+    "Name": "\u7B2C49\u56DE\u65B0\u6F5F\u30B8\u30E3\u30BA\u30B9\u30C8\u30EA\u30FC\u30C8",
+    "Type": "\u305D\u306E\u4ED6",
+    "Start": "",
+    "End": "",
+    "Attendance": 2000,
+    "Scale": "\u4E2D",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u65B0\u6F5F\u5E02\u5927\u898F\u6A21\u30A4\u30D9\u30F3\u30C8",
+    "SourceUrl": "https://www.city.niigata.lg.jp/kanko/kanko/promotion/eventschedule.html",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2027-01-23",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u95A2\u4FC2\u8005\u306E\u307F \u7B2C66\u56DE\u65E5\u672C\u5B9A\u4F4D\u30FB\u6A5F\u80FD\u795E\u7D4C\u5916\u79D1\u5B66\u4F1A",
+    "Type": "\u5B66\u4F1A\u30FB\u5C55\u793A\u4F1A\uFF08\u6700\u7D42\u65E5\uFF09",
+    "Start": "17:15",
+    "End": "20:00",
+    "Attendance": 8000,
+    "Scale": "\u5927",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=1\u0026year=2027",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2027-02-07",
+    "Venue": "\u65B0\u6F5F\u30C6\u30EB\u30B5",
+    "Name": "UNICORN",
+    "Type": "\u30B3\u30F3\u30B5\u30FC\u30C8",
+    "Start": "",
+    "End": "",
+    "Attendance": 0,
+    "Scale": "\u4E2D",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u65B0\u6F5F\u5E02\u5927\u898F\u6A21\u30A4\u30D9\u30F3\u30C8",
+    "SourceUrl": "https://www.city.niigata.lg.jp/kanko/kanko/promotion/eventschedule.html",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2027-02-10",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u4E00\u822C\u5411\u3051 \u4EE4\u548C\uFF18\u5E74\u5EA6 \u7B2C\uFF12\u56DE\u969C\u304C\u3044\u8005\u9762\u63A5\u4F1A",
+    "Type": "\u305D\u306E\u4ED6",
+    "Start": "17:15",
+    "End": "20:00",
+    "Attendance": 8000,
+    "Scale": "\u5927",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=2\u0026year=2027",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2027-02-11",
+    "Venue": "\u65B0\u6F5F\u30C6\u30EB\u30B5",
+    "Name": "ASIAN KUNG-FU GENERATION",
+    "Type": "\u30B3\u30F3\u30B5\u30FC\u30C8",
+    "Start": "",
+    "End": "",
+    "Attendance": 0,
+    "Scale": "\u4E2D",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u65B0\u6F5F\u5E02\u5927\u898F\u6A21\u30A4\u30D9\u30F3\u30C8",
+    "SourceUrl": "https://www.city.niigata.lg.jp/kanko/kanko/promotion/eventschedule.html",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
+    "Date": "2027-02-18",
+    "Venue": "\u770C\u6C11\u4F1A\u9928",
+    "Name": "sumika",
+    "Type": "\u30B3\u30F3\u30B5\u30FC\u30C8",
+    "Start": "",
+    "End": "",
+    "Attendance": 0,
+    "Scale": "\u4E2D",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u65B0\u6F5F\u5E02\u5927\u898F\u6A21\u30A4\u30D9\u30F3\u30C8",
+    "SourceUrl": "https://www.city.niigata.lg.jp/kanko/kanko/promotion/eventschedule.html",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  }
+];
+const DATA_START="2026-11-19";
+const DATA_END="2027-02-19";
+const today=new Date();today.setHours(0,0,0,0);
+let activeRange="today";
+const search=document.getElementById("search");
+const venue=document.getElementById("venue");
+const filters=document.getElementById("filters");
+const content=document.getElementById("content");
+
+function dateOnly(v){var d=new Date(v+"T00:00:00");d.setHours(0,0,0,0);return d}
+function ymd(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function addDays(d,n){var x=new Date(d);x.setDate(x.getDate()+n);return x}
+function bounds(){
+ if(activeRange==="today")return[today,today];
+ if(activeRange==="tomorrow"){var t=addDays(today,1);return[t,t]}
+ if(activeRange==="week"){var until=(7-today.getDay())%7;return[today,addDays(today,until)]}
+ if(activeRange==="30")return[today,addDays(today,29)];
+ return[dateOnly(DATA_START),dateOnly(DATA_END)]
+}
+function esc(v){return String(v||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;")}
+function wd(d){return["日","月","火","水","木","金","土"][d.getDay()]}
+function md(v){var d=dateOnly(v);return(d.getMonth()+1)+"/"+d.getDate()}
+function tm(a,b){if(a&&b)return a+" ～ "+b;if(a)return a;return"時間未定"}
+function buildVenues(){
+ [...new Set(EVENTS.map(function(x){return x.Venue}).filter(Boolean))].sort(function(a,b){return a.localeCompare(b,"ja")}).forEach(function(v){
+  var o=document.createElement("option");o.value=v;o.textContent=v;venue.appendChild(o)
+ })
+}
+function getRows(){
+ var b=bounds(),q=search.value.trim().toLowerCase(),v=venue.value;
+ return EVENTS.filter(function(x){
+  var d=dateOnly(x.Date);if(d<b[0]||d>b[1])return false;if(v&&x.Venue!==v)return false;if(!q)return true;
+  return (x.Name+" "+x.Venue+" "+x.Type+" "+x.Note).toLowerCase().includes(q)
+ }).sort(function(a,b){var d=a.Date.localeCompare(b.Date);return d!==0?d:(a.Start||"99:99").localeCompare(b.Start||"99:99")})
+}
+function render(){
+ var rows=getRows(),b=bounds();
+ document.getElementById("eventCount").textContent=rows.length.toLocaleString("ja-JP")+"件";
+ document.getElementById("attendanceTotal").textContent=rows.reduce(function(a,x){return a+(x.Attendance||0)},0).toLocaleString("ja-JP")+"人";
+ document.getElementById("rangeLabel").textContent=md(ymd(b[0]))+" ～ "+md(ymd(b[1]));
+ if(!rows.length){content.innerHTML='<div class="empty">該当するイベントはありません。</div>';return}
+ var groups={};rows.forEach(function(x){(groups[x.Date]||(groups[x.Date]=[])).push(x)});
+ var html="";
+ Object.keys(groups).forEach(function(date){
+  var d=dateOnly(date);html+='<section class="day"><div class="day-title">'+md(date)+' <span class="weekday">（'+wd(d)+'）</span></div><div class="cards">';
+  groups[date].forEach(function(x){
+   var link=x.SourceUrl&&/^https?:\/\//i.test(x.SourceUrl)?'<a href="'+esc(x.SourceUrl)+'" target="_blank" rel="noopener">情報元を開く</a>':esc(x.Source||"");
+   html+='<article class="card"><div class="name">'+esc(x.Name)+'</div><div class="meta">';
+   html+='<div class="k">会場</div><div>'+esc(x.Venue)+'</div><div class="k">時間</div><div>'+esc(tm(x.Start,x.End))+'</div>';
+   html+='<div class="k">想定人数</div><div><strong>'+Number(x.Attendance||0).toLocaleString("ja-JP")+'人</strong></div></div><div class="badges">';
+   if(x.Type)html+='<span class="badge">'+esc(x.Type)+'</span>';if(x.Scale)html+='<span class="badge">規模：'+esc(x.Scale)+'</span>';
+   if(x.OutOfPrefecture>0)html+='<span class="badge">県外 '+Number(x.OutOfPrefecture).toLocaleString("ja-JP")+'人</span>';
+   if(x.Overseas>0)html+='<span class="badge">海外 '+Number(x.Overseas).toLocaleString("ja-JP")+'人</span>';
+   html+='</div>';if(x.Note)html+='<div class="source">'+esc(x.Note)+'</div>';html+='<div class="source">'+link+'</div></article>'
+  });html+='</div></section>'
+ });content.innerHTML=html
+}
+filters.addEventListener("click",function(e){var b=e.target.closest("button[data-range]");if(!b)return;activeRange=b.dataset.range;filters.querySelectorAll("button").forEach(function(x){x.classList.remove("active")});b.classList.add("active");render()});
+search.addEventListener("input",render);venue.addEventListener("change",render);buildVenues();render();
+</script>
+</body>
+</html>
