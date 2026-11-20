@@ -16723,5 +16723,20 @@
     "OutOfPrefecture": 6500,
     "Overseas": 300,
     "Note": ""
+  },
+  {
+    "Date": "2027-05-20",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB\u3001\u30DB\u30C6\u30EB\u65E5\u822A\u65B0\u6F5F\u3001\u4E07\u4EE3\u5CF6\u30D3\u30EB\u3001\u4E07\u4EE3\u5CF6\u591A\u76EE\u7684\u5E83\u5834",
+    "Name": "\u7B2C68\u56DE\u65E5\u672C\u795E\u7D4C\u5B66\u4F1A\u5B66\u8853\u5927\u4F1A",
+    "Type": "\u5B66\u4F1A\u30FB\u5C55\u793A\u4F1A\uFF08\u4E2D\u65E5\u30FB\u5BBF\u6CCA\u9700\u8981\uFF09",
+    "Start": "",
+    "End": "",
+    "Attendance": 7000,
+    "Scale": "\u4E2D",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u65B0\u6F5F\u5E02\u5927\u898F\u6A21\u30A4\u30D9\u30F3\u30C8",
+    "SourceUrl": "https://www.city.niigata.lg.jp/kanko/kanko/promotion/eventschedule.html",
+    "OutOfPrefecture": 6500,
+    "Overseas": 300,
+    "Note": ""
   }
 ]
