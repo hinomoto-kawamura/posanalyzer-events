@@ -29,10 +29,10 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:22px}
 </style>
 </head>
 <body>
-<header><div class="header"><h1>店舗向けイベント情報</h1><div class="sub">POSAnalyzer共有イベント一覧 / 更新 2026/11/20 13:36</div></div></header>
+<header><div class="header"><h1>店舗向けイベント情報</h1><div class="sub">POSAnalyzer共有イベント一覧 / 更新 2026/11/23 10:08</div></div></header>
 <main>
 <div class="date-nav">
-<input id="targetDate" type="date" min="2025-04-01" max="2027-05-20">
+<input id="targetDate" type="date" min="2025-04-01" max="2027-05-23">
 <button id="prevDay">← 前日</button>
 <button id="todayButton" class="primary">今日</button>
 <button id="nextDay">翌日 →</button>
@@ -16048,6 +16048,21 @@ const EVENTS=[
     "Note": ""
   },
   {
+    "Date": "2027-02-11",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB",
+    "Name": "\u4E00\u822C\u5411\u3051 \u306B\u3044\u304C\u305F\u5C31\u8077\u5FDC\u63F4\u56E3\u4E3B\u50AC \u4ED5\u4E8B\u7814\u7A76\u30D5\u30A7\u30B9\u30BF",
+    "Type": "\u796D\u308A\u30FB\u30DE\u30EB\u30B7\u30A7",
+    "Start": "13:00",
+    "End": "17:00",
+    "Attendance": 8000,
+    "Scale": "\u5927",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u6731\u9DFA\u30E1\u30C3\u30BB\u516C\u5F0F",
+    "SourceUrl": "https://www.tokimesse.com/sp/visitor/event/index?month=2\u0026year=2027",
+    "OutOfPrefecture": 0,
+    "Overseas": 0,
+    "Note": ""
+  },
+  {
     "Date": "2027-02-18",
     "Venue": "\u770C\u6C11\u4F1A\u9928",
     "Name": "sumika",
@@ -16826,10 +16841,40 @@ const EVENTS=[
     "OutOfPrefecture": 6500,
     "Overseas": 300,
     "Note": ""
+  },
+  {
+    "Date": "2027-05-21",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB\u3001\u30DB\u30C6\u30EB\u65E5\u822A\u65B0\u6F5F\u3001\u4E07\u4EE3\u5CF6\u30D3\u30EB\u3001\u4E07\u4EE3\u5CF6\u591A\u76EE\u7684\u5E83\u5834",
+    "Name": "\u7B2C68\u56DE\u65E5\u672C\u795E\u7D4C\u5B66\u4F1A\u5B66\u8853\u5927\u4F1A",
+    "Type": "\u5B66\u4F1A\u30FB\u5C55\u793A\u4F1A\uFF08\u4E2D\u65E5\u30FB\u5BBF\u6CCA\u9700\u8981\uFF09",
+    "Start": "",
+    "End": "",
+    "Attendance": 7000,
+    "Scale": "\u4E2D",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u65B0\u6F5F\u5E02\u5927\u898F\u6A21\u30A4\u30D9\u30F3\u30C8",
+    "SourceUrl": "https://www.city.niigata.lg.jp/kanko/kanko/promotion/eventschedule.html",
+    "OutOfPrefecture": 6500,
+    "Overseas": 300,
+    "Note": ""
+  },
+  {
+    "Date": "2027-05-22",
+    "Venue": "\u6731\u9DFA\u30E1\u30C3\u30BB\u3001\u30DB\u30C6\u30EB\u65E5\u822A\u65B0\u6F5F\u3001\u4E07\u4EE3\u5CF6\u30D3\u30EB\u3001\u4E07\u4EE3\u5CF6\u591A\u76EE\u7684\u5E83\u5834",
+    "Name": "\u7B2C68\u56DE\u65E5\u672C\u795E\u7D4C\u5B66\u4F1A\u5B66\u8853\u5927\u4F1A",
+    "Type": "\u5B66\u4F1A\u30FB\u5C55\u793A\u4F1A\uFF08\u6700\u7D42\u65E5\uFF09",
+    "Start": "",
+    "End": "",
+    "Attendance": 7000,
+    "Scale": "\u4E2D",
+    "Source": "\u81EA\u52D5\u53D6\u5F97\uFF1A\u65B0\u6F5F\u5E02\u5927\u898F\u6A21\u30A4\u30D9\u30F3\u30C8",
+    "SourceUrl": "https://www.city.niigata.lg.jp/kanko/kanko/promotion/eventschedule.html",
+    "OutOfPrefecture": 6500,
+    "Overseas": 300,
+    "Note": ""
   }
 ];
 const DATA_START="2025-04-01";
-const DATA_END="2027-05-20";
+const DATA_END="2027-05-23";
 const today=new Date();today.setHours(0,0,0,0);
 let selectedDate=new Date(today);
 let activeRange="date";
